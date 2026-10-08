@@ -57,14 +57,15 @@ function renderMetrics() {
   $('private-teaser').hidden = snapshot.owner;
 }
 function renderChart() {
-  const width = 680, height = 195, left = 30, right = 8, top = 10, bottom = 29;
+  const width = Math.max(250, $('resource-chart').clientWidth), height = 195, left = 30, right = 8, top = 10, bottom = 29;
   const chartWidth = width - left - right, chartHeight = height - top - bottom;
   const end = Date.now(), start = end - range * 3600000;
   const points = (snapshot.history || []).filter(p => Date.parse(p.at) >= start);
   const x = time => left + (time - start) / (end - start) * chartWidth;
   const y = value => top + chartHeight * (1 - Math.min(100, Math.max(0, value)) / 100);
   let svg = [0, 25, 50, 75, 100].map(n => `<line class="chart-grid" x1="${left}" x2="${width - right}" y1="${y(n)}" y2="${y(n)}"/><text x="0" y="${y(n) + 4}">${n}</text>`).join('');
-  for (let i = 0; i < 5; i++) { const t = start + i * (end - start) / 4; svg += `<text x="${x(t)}" y="${height - 2}" text-anchor="${i === 0 ? 'start' : i === 4 ? 'end' : 'middle'}">${localTime(t)}</text>`; }
+  const ticks = width < 420 ? 2 : 4;
+  for (let i = 0; i <= ticks; i++) { const t = start + i * (end - start) / ticks; svg += `<text x="${x(t)}" y="${height - 2}" text-anchor="${i === 0 ? 'start' : i === ticks ? 'end' : 'middle'}">${localTime(t)}</text>`; }
   for (const [key, color] of [['gpu', '#bb9cef'], ['memory', '#82aaff'], ['cpu', '#8ce3bc']]) {
     let previous = null, path = '';
     for (const p of points) {
@@ -189,4 +190,5 @@ $('logout-button').addEventListener('click', async () => {
   finally { $('logout-button').disabled = false; }
 });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
+window.addEventListener('resize', () => { if (snapshot && view === 'overview') renderChart(); });
 setInterval(refresh, 5000); setInterval(updateClock, 1000); refresh(); updateClock();
