@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import http from 'node:http';
 import { hashCode, verifyCode, signSession, validSession, sessionCookie, publicSnapshot, sameOrigin } from '../lib/security.mjs';
-import { discoverSites, classifyStatus, summarizeChecks } from '../lib/monitor.mjs';
+import { discoverSites, classifyStatus, summarizeChecks, readCaddyInventory } from '../lib/monitor.mjs';
 
 test('owner code verification rejects wrong or malformed credentials', async () => {
   const config = await hashCode('a-long-example-secret-code');
@@ -50,4 +51,14 @@ test('HTTP error pages cannot be labeled operational', () => {
   assert.equal(classifyStatus(200), 'up'); assert.equal(classifyStatus(302), 'up');
   assert.equal(classifyStatus(401), 'restricted'); assert.equal(classifyStatus(403), 'restricted');
   assert.equal(classifyStatus(404), 'degraded'); assert.equal(classifyStatus(503), 'down');
+});
+test('server inventory client does not send browser fetch metadata', async () => {
+  const server = http.createServer((req, res) => {
+    assert.equal(req.headers['sec-fetch-mode'], undefined);
+    res.setHeader('Content-Type', 'application/json');
+    res.end(JSON.stringify({ public: { listen: [':443'] } }));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try { assert.deepEqual(await readCaddyInventory(`http://127.0.0.1:${server.address().port}`), { public: { listen: [':443'] } }); }
+  finally { await new Promise(resolve => server.close(resolve)); }
 });
