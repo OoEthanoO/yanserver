@@ -78,7 +78,8 @@ function renderChart() {
   }
   $('resource-chart').innerHTML = `<svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" aria-hidden="true">${svg}</svg>${points.length < 4 ? '<div class="chart-empty">Collecting live history. New samples appear every 30 seconds.</div>' : ''}`;
   $('resource-chart').setAttribute('aria-label', `Resource usage over ${range} hour(s). Current CPU ${percent(snapshot.metrics.cpu)}, memory ${percent(snapshot.metrics.memory)}, GPU ${percent(snapshot.metrics.gpu)}. ${points.length} measurements.`);
-  $('chart-note').textContent = `Recording since ${new Date(snapshot.historySince).toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${localTime(snapshot.historySince)}`;
+  const since = snapshot.monitoring.historySince;
+  $('chart-note').textContent = `Recording since ${new Date(since).toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${localTime(since)}`;
 }
 function renderSites() {
   const query = $('site-search').value.toLowerCase().trim(), filter = $('status-filter').value;
@@ -122,6 +123,7 @@ function render() {
   $('mode-label').textContent = snapshot.owner ? 'Owner view' : 'Public view';
   $('mode-label').classList.toggle('is-owner', snapshot.owner);
   $('owner-button-label').textContent = snapshot.owner ? 'Owner settings' : 'Owner access';
+  $('owner-button').setAttribute('aria-label', snapshot.owner ? 'Owner settings' : 'Owner access');
   $('lock-indicator').hidden = snapshot.owner;
   if (!snapshot.owner && view === 'system') setView('overview');
   $('error-banner').hidden = !snapshot.collectorStale && !warnings.length;

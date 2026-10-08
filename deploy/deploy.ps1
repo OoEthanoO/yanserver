@@ -29,9 +29,13 @@ try {
     if($LASTEXITCODE -ne 0){throw 'Installer upload failed.'}
     if($PrepareDns){Remote "& '$remoteRoot\dns.ps1'"; Write-Output 'Verify public DNS before running the publish step.'; return}
     Remote "& '$remoteRoot\install.ps1' -Archive '$remoteRoot\incoming\release.tar' -Sha256 '$sha' -Commit '$commit' -Publish"
-    $health=& 'C:\Windows\System32\curl.exe' --silent --show-error --fail --max-time 30 --ssl-revoke-best-effort 'https://server.ethanyanxu.com/api/health'
-    if($LASTEXITCODE -ne 0){throw 'Public HTTPS verification failed.'}
-    $obj=$health|ConvertFrom-Json
-    if($obj.commit -ne $commit){throw 'Public server returned an unexpected release.'}
+    $verified=$false
+    for($attempt=0;$attempt -lt 18;$attempt++){
+        $saved=$ErrorActionPreference;$ErrorActionPreference='Continue'
+        try{$health=& 'C:\Windows\System32\curl.exe' --silent --fail --max-time 8 --ssl-revoke-best-effort 'https://server.ethanyanxu.com/api/health' 2>$null;$code=$LASTEXITCODE}finally{$ErrorActionPreference=$saved}
+        if($code -eq 0){try{$obj=$health|ConvertFrom-Json;if($obj.commit -eq $commit){$verified=$true;break}}catch{}}
+        Start-Sleep -Seconds 5
+    }
+    if(-not $verified){throw 'Public HTTPS did not serve the new release within the verification window.'}
     Write-Output "Published https://server.ethanyanxu.com ($commit)"
 } finally {if(Test-Path -LiteralPath $archive){Remove-Item -LiteralPath $archive -Force}}
