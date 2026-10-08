@@ -38,6 +38,8 @@ test('Caddy inventory recursively discovers apps, static sites, aliases and excl
   assert.equal(sites.find(s => s.domain === 'alpha.example.com').kind, 'Application');
   assert.deepEqual(sites.find(s => s.domain === 'static.example.com').roots, ['C:/site']);
   assert.equal(sites.some(s => s.domain === 'private.example.com'), false);
+  config.public.routes[0].handle.push({ handler: 'rewrite', path_regexp: [{ match: '(.*)', replace: '/$1' }] });
+  assert.equal(discoverSites(config).length, 3);
 });
 test('availability represents observed checks and leaves unobserved history unknown', () => {
   const now = Date.now();
