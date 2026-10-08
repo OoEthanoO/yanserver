@@ -1,0 +1,10 @@
+import { randomBytes } from 'node:crypto';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
+import { hashCode } from '../lib/security.mjs';
+const dir = process.env.YANSERVER_DATA;
+if (!dir) throw new Error('Set YANSERVER_DATA to the existing protected data directory. Stop the YanServer task first.');
+const code = randomBytes(24).toString('base64url');
+await writeFile(path.join(dir, 'auth.json'), JSON.stringify({ ...await hashCode(code), secret: randomBytes(48).toString('base64url') }), { mode: 0o600 });
+await writeFile(path.join(dir, 'owner-access.txt'), `YanServer owner access\n\nAccess code: ${code}\n\nAll previous owner sessions are revoked after server restart.\n`, { mode: 0o600 });
+console.log('Owner access rotated. Read owner-access.txt privately, then restart YanServer.');

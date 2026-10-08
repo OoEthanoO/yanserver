@@ -1,0 +1,14 @@
+{
+  "name": "yanserver",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Live public and owner status dashboard for finprint-host",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "check": "node --check server.mjs && node --check lib/monitor.mjs && node --check lib/security.mjs && node --check public/app.js",
+    "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy/deploy.ps1"
+  }
+}
